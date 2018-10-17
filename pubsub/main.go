@@ -16,6 +16,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	defer client.Close()
 
 	topic := client.Topic("f8-testing-pubsub-watch")
 	if topic == nil {
@@ -23,14 +24,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	sub, err := client.CreateSubscription(ctx, "my-sub", pubsub.SubscriptionConfig{Topic: topic})
+	sub, err := client.CreateSubscription(ctx, "my-sub-4", pubsub.SubscriptionConfig{Topic: topic})
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	err = sub.Receive(ctx, func(ctx context.Context, message *pubsub.Message) {
-		fmt.Println(message)
+		if message.Attributes["eventType"] != "OBJECT_FINALIZE" {
+			return
+		}
+		fileName := message.Attributes["objectId"]
+		log.Printf("fileName: %s", fileName)
 	})
 	if err != nil {
 		fmt.Println(err)
